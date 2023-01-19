@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules;
 
 class StoreProductRequest extends FormRequest
 {
@@ -11,9 +13,10 @@ class StoreProductRequest extends FormRequest
      *
      * @return bool
      */
+
     public function authorize()
     {
-        return false;
+        return true;
     }
 
     /**
@@ -24,7 +27,14 @@ class StoreProductRequest extends FormRequest
     public function rules()
     {
         return [
-            //
+            'sku' => ['required', 'unique:products', 'max:100'],
+            'name' => ['required', 'max:100'],
+            'price' => ['required', 'numeric', 'min:1'],
+            'stock' => ['required', 'numeric', 'min:0'],
+			'brand_id' => ['required'],
+            'category_ids' => ['required', 'array', 'min:2']
         ];
     }
+
+    
 }
