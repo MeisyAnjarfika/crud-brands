@@ -3,6 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Product;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
+
+
 
 class ProductController extends Controller
 {
@@ -13,7 +20,9 @@ class ProductController extends Controller
      */
     public function index()
     {
-        //
+        $products = Product::all();
+
+        return view('products.index', ['products' => $products]);
     }
 
     /**
@@ -23,7 +32,10 @@ class ProductController extends Controller
      */
     public function create()
     {
-        //
+        $brands = Brand::orderBy('name', 'asc')->get()->pluck('name', 'id');
+        $categories = Category::orderBy('name', 'asc')->get()->pluck('name', 'id');
+
+        return view('products.create', ['brands' => $brands, 'categories' => $categories]);
     }
 
     /**
@@ -32,11 +44,15 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(StoreProductRequest $request)
     {
-        //
-    }
+        $params = $request->validated();
+        if ($product = Product::create($params)) {
+            $product->categories()->sync($params['category_ids']);
 
+            return redirect(route('products.index'))->with('success', 'Added!');
+        }
+    }
     /**
      * Display the specified resource.
      *
@@ -56,7 +72,12 @@ class ProductController extends Controller
      */
     public function edit($id)
     {
-        //
+        $product = Product::findOrFail($id);
+        $brands = Brand::orderBy('name', 'asc')->get()->pluck('name', 'id');
+        $categories = Category::orderBy('name', 'asc')->get()->pluck('name', 'id');
+
+
+        return view('products.edit', ['product' => $product, 'brands' => $brands, 'categories' => $categories]);
     }
 
     /**
@@ -68,7 +89,14 @@ class ProductController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+            $product = Product::findOrFail($id);
+            $params = $request->validated();
+    
+            if ($product->update($params)) {
+                $product->categories()->sync($params['category_ids']);
+    
+                return redirect(route('products.index'))->with('success', 'Updated!'); 
+            }
     }
 
     /**
@@ -79,6 +107,13 @@ class ProductController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $product = Product::findOrFail($id);
+        $product->categories()->detach();
+
+        if ($product->delete()) {
+            return redirect(route('products.index'))->with('success', 'Deleted!');
+        }
+
+        return redirect(route('products.index'))->with('error', 'Sorry, unable to delete this!');
     }
 }
